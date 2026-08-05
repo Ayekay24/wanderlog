@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wanderlog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2420;
+    --ink-soft:#233029;
+    --ink-line: rgba(236,230,214,0.12);
+    --paper:#ECE6D6;
+    --paper-dim:#DCD3BB;
+    --paper-shadow: rgba(15,20,17,0.35);
+    --brass:#B4864A;
+    --rust:#B5502E;
+    --pine:#3E6B58;
+    --ink-text:#241F17;
+    --muted:#8A8272;
+    --cream:#ECE6D6;
+    --cream-dim: rgba(236,230,214,0.55);
+    --font-display:'Fraunces', serif;
+    --font-body:'Space Grotesk', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(180,134,74,0.10), transparent 45%),
+      radial-gradient(ellipse at 100% 110%, rgba(62,107,88,0.14), transparent 50%),
+      linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 100%);
+    min-height:100vh;
+    font-family:var(--font-body);
+    color:var(--cream);
+    padding: 48px 20px 80px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .app{ max-width: 640px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin:0 0 10px;
+  }
+  h1.title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-style:italic;
+    font-size:clamp(38px, 8vw, 56px);
+    margin:0 0 6px;
+    color:var(--cream);
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    font-size:14px;
+    color:var(--cream-dim);
+    margin:0 0 28px;
+    max-width:44ch;
+    line-height:1.5;
+  }
+
+  /* ---------- Progress stub (boarding-pass style) ---------- */
+  .stub{
+    position:relative;
+    background:var(--paper);
+    color:var(--ink-text);
+    border-radius:10px;
+    padding:18px 22px;
+    transform:rotate(-0.6deg);
+    box-shadow: 0 14px 30px var(--paper-shadow);
+    margin-bottom:30px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+  .stub::after{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; right:74px;
+    border-right:2px dashed rgba(36,31,23,0.25);
+  }
+  .stub-count{
+    font-family:var(--font-mono);
+    font-size:30px;
+    font-weight:500;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .stub-count small{ font-size:14px; color:var(--muted); font-weight:400;}
+  .stub-mid{ flex:1; min-width:0; }
+  .stub-label{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .stub-bar{
+    height:6px;
+    border-radius:3px;
+    background: repeating-linear-gradient(90deg, rgba(36,31,23,0.14) 0 4px, transparent 4px 8px);
+    position:relative;
+    overflow:hidden;
+  }
+  .stub-bar-fill{
+    position:absolute; inset:0; width:0%;
+    background: linear-gradient(90deg, var(--pine), #4f8570);
+    border-radius:3px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+  .stub-tag{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    color:var(--muted);
+    writing-mode:vertical-rl;
+    text-orientation:mixed;
+    padding-left:2px;
+  }
+
+  /* ---------- Composer ---------- */
+  .composer{
+    display:flex;
+    gap:8px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .composer input{
+    font-family:var(--font-body);
+    font-size:15px;
+    background:var(--paper);
+    color:var(--ink-text);
+    border:none;
+    border-radius:8px;
+    padding:13px 16px;
+    outline:none;
+    box-shadow: 0 6px 16px rgba(15,20,17,0.22);
+  }
+  .composer input::placeholder{ color:var(--muted); }
+  .composer input:focus{ box-shadow: 0 0 0 2px var(--brass), 0 6px 16px rgba(15,20,17,0.22); }
+  #placeInput{ flex:1 1 220px; }
+  #noteInput{ flex:1 1 160px; }
+  .add-btn{
+    font-family:var(--font-mono);
+    font-size:13px;
+    letter-spacing:0.05em;
+    background:var(--rust);
+    color:var(--cream);
+    border:none;
+    border-radius:8px;
+    padding:13px 20px;
+    cursor:pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .add-btn:hover{ background:#c65f37; transform:translateY(-1px); }
+  .add-btn:active{ transform:translateY(0); }
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex;
+    gap:22px;
+    margin-bottom:26px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--ink-line);
+  }
+  .filters button{
+    background:none;
+    border:none;
+    color:var(--cream-dim);
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    cursor:pointer;
+    padding:4px 0;
+    position:relative;
+  }
+  .filters button.active{ color:var(--cream); }
+  .filters button.active::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:-15px;
+    height:2px;
+    background:var(--brass);
+  }
+
+  /* ---------- Route list ---------- */
+  .route{ list-style:none; margin:0; padding:0; }
+  .route-item{
+    display:grid;
+    grid-template-columns:30px 1fr;
+    column-gap:14px;
+    position:relative;
+    animation: fadeUp 0.4s ease both;
+  }
+  .route-item .pin-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .pin{
+    width:26px; height:26px;
+    border-radius:50%;
+    border:1.5px solid var(--brass);
+    color:var(--brass);
+    font-family:var(--font-mono);
+    font-size:10px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--ink-soft);
+    flex-shrink:0;
+    z-index:1;
+    transition: all 0.2s ease;
+  }
+  .route-item.done .pin{ background:var(--pine); border-color:var(--pine); color:var(--cream); }
+  .thread{
+    flex:1;
+    width:1px;
+    background: var(--ink-line);
+    margin: 2px 0;
+  }
+  .route-item:last-child .thread{ display:none; }
+
+  .card{
+    background:var(--paper);
+    color:var(--ink-text);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:18px;
+    box-shadow: 0 8px 20px rgba(15,20,17,0.22);
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    transition: background 0.3s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .card:hover{ transform:translateY(-2px); box-shadow: 0 12px 26px rgba(15,20,17,0.28); }
+  .route-item.done .card{ background:var(--paper-dim); }
+
+  .card-body{ flex:1; min-width:0; }
+  .card-name{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:19px;
+    margin:0 0 3px;
+    line-height:1.25;
+    word-break:break-word;
+  }
+  .route-item.done .card-name{
+    color: rgba(36,31,23,0.55);
+    text-decoration: line-through;
+    text-decoration-color: rgba(181,80,46,0.55);
+    text-decoration-thickness: 1.5px;
+  }
+  .card-note{
+    font-size:13px;
+    color:var(--muted);
+    margin:0;
+    line-height:1.4;
+  }
+
+  .card-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .check-btn{
+    width:36px; height:36px;
+    border-radius:50%;
+    border:1.5px solid var(--pine);
+    background:transparent;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--pine);
+    transition: all 0.18s ease;
+    flex-shrink:0;
+    position:relative;
+  }
+  .check-btn:hover{ background: rgba(62,107,88,0.12); }
+  .route-item.done .check-btn{ background:var(--pine); color:var(--paper); }
+  .check-btn svg{ width:16px; height:16px; }
+
+  .del-btn{
+    width:26px; height:26px;
+    border:none;
+    background:none;
+    color: rgba(36,31,23,0.35);
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    border-radius:50%;
+    opacity:0;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .card:hover .del-btn{ opacity:1; }
+  .del-btn:hover{ color:var(--rust); background:rgba(181,80,46,0.08); }
+
+  .stamp{
+    position:absolute;
+    top:8px; right:8px;
+    width:64px; height:64px;
+    pointer-events:none;
+    animation: stampIn 0.4s cubic-bezier(.34,1.56,.64,1) both;
+    opacity:0.9;
+  }
+
+  @keyframes stampIn{
+    0%{ transform:scale(2) rotate(-18deg); opacity:0; }
+    70%{ transform:scale(0.92) rotate(-8deg); opacity:0.95;}
+    100%{ transform:scale(1) rotate(-10deg); opacity:0.9; }
+  }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--cream-dim);
+  }
+  .empty-icon{ font-size:28px; margin-bottom:10px; opacity:0.7; }
+  .empty h3{ font-family:var(--font-display); font-style:italic; font-weight:500; font-size:22px; margin:0 0 6px; color:var(--cream); }
+  .empty p{ font-size:13px; margin:0; }
+
+  .footer-note{
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.05em;
+    color: rgba(236,230,214,0.35);
+    margin-top:38px;
+  }
+
+  .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+  button:focus-visible, input:focus-visible{
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="inkGrain" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3"/>
+    </filter>
+    <path id="stampArc" d="M32,32 m-24,0 a24,24 0 1,1 48,0 a24,24 0 1,1 -48,0"/>
+  </defs>
+</svg>
+
+<div class="app">
+  <header>
+    <p class="eyebrow">your route, one stop at a time</p>
+    <h1 class="title">Wanderlog</h1>
+    <p class="subtitle">A shared list of places worth going. Anyone with this link can add a stop or stamp one visited.</p>
+  </header>
+
+  <div class="stub">
+    <div class="stub-count" id="stubCount">0<small>&nbsp;/&nbsp;0</small></div>
+    <div class="stub-mid">
+      <div class="stub-label">stops visited</div>
+      <div class="stub-bar"><div class="stub-bar-fill" id="stubBarFill"></div></div>
+    </div>
+    <div class="stub-tag">WNDRLG</div>
+  </div>
+
+  <form class="composer" id="composerForm">
+    <input id="placeInput" type="text" placeholder="Add a place… (e.g. Kyoto)" maxlength="80" autocomplete="off" required>
+    <input id="noteInput" type="text" placeholder="Note, optional" maxlength="120" autocomplete="off">
+    <button type="submit" class="add-btn">+ Add stop</button>
+  </form>
+
+  <nav class="filters">
+    <button data-filter="all" class="active">All</button>
+    <button data-filter="todo">To go</button>
+    <button data-filter="done">Visited</button>
+  </nav>
+
+  <ol class="route" id="routeList" aria-live="polite"></ol>
+
+  <div class="empty" id="emptyState" hidden>
+    <div class="empty-icon">✳</div>
+    <h3 id="emptyTitle">No stops yet</h3>
+    <p id="emptyText">Add the first place on the route above.</p>
+  </div>
+
+  <p class="footer-note" id="footerNote">loading route…</p>
+</div>
+
+<script>
+(function(){
+  const SUPABASE_URL = 'https://locnvpwsemsexlziudnd.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY252cHdzZW1zZXhseml1ZG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NTYwNDEsImV4cCI6MjEwMTQzMjA0MX0.vrA4XdVhJAWeSPcGGApHTKdHYgOndlq9Cam8nZ3HsII';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const STORAGE_KEY = 'places';
+  let places = [];
+  let filter = 'all';
+  let loaded = false;
+  let lastRenderedIds = new Set(); // to detect newly-done items for stamp animation
+  let saving = false;
+  let dirty = false; // true while local changes haven't been confirmed saved
+  let storageAvailable = true;
+
+  const routeList = document.getElementById('routeList');
+  const emptyState = document.getElementById('emptyState');
+  const emptyTitle = document.getElementById('emptyTitle');
+  const emptyText = document.getElementById('emptyText');
+  const stubCount = document.getElementById('stubCount');
+  const stubBarFill = document.getElementById('stubBarFill');
+  const footerNote = document.getElementById('footerNote');
+  const composerForm = document.getElementById('composerForm');
+  const placeInput = document.getElementById('placeInput');
+  const noteInput = document.getElementById('noteInput');
+  const filterButtons = document.querySelectorAll('.filters button');
+
+  function uid(){
+    return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+  }
+
+  function stampSVG(){
+    return `
+      <svg class="stamp" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <g filter="url(#inkGrain)">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#3E6B58" stroke-width="2.5"/>
+          <circle cx="32" cy="32" r="20" fill="none" stroke="#3E6B58" stroke-width="1" stroke-dasharray="2 3"/>
+          <path d="M23 33 L29 39 L41 25" fill="none" stroke="#3E6B58" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <text font-family="IBM Plex Mono, monospace" font-size="6.2" fill="#3E6B58" letter-spacing="2">
+            <textPath href="#stampArc" startOffset="2">VISITED • VISITED •</textPath>
+          </text>
+        </g>
+      </svg>`;
+  }
+
+  function render(){
+    // progress
+    const total = places.length;
+    const done = places.filter(p => p.done).length;
+    stubCount.innerHTML = `${done}<small>&nbsp;/&nbsp;${total}</small>`;
+    stubBarFill.style.width = total ? (done/total*100) + '%' : '0%';
+
+    // filtered list
+    let visible = places;
+    if(filter === 'todo') visible = places.filter(p => !p.done);
+    if(filter === 'done') visible = places.filter(p => p.done);
+
+    routeList.innerHTML = '';
+
+    if(!loaded){
+      emptyState.hidden = true;
+      routeList.innerHTML = '';
+      return;
+    }
+
+    if(visible.length === 0){
+      emptyState.hidden = false;
+      if(total === 0){
+        emptyTitle.textContent = 'No stops yet';
+        emptyText.textContent = 'Add the first place on the route above.';
+      } else if(filter === 'todo'){
+        emptyTitle.textContent = 'Route complete';
+        emptyText.textContent = 'Every stop has been visited. Add a new one to keep going.';
+      } else {
+        emptyTitle.textContent = 'Nothing stamped yet';
+        emptyText.textContent = 'Check off a place once you get there.';
+      }
+      return;
+    }
+
+    emptyState.hidden = true;
+
+    visible.forEach((p, idx) => {
+      const li = document.createElement('li');
+      li.className = 'route-item' + (p.done ? ' done' : '');
+      li.style.animationDelay = (idx * 0.03) + 's';
+
+      const isNewlyDone = p.done && !lastRenderedIds.has(p.id + ':done');
+
+      li.innerHTML = `
+        <div class="pin-col">
+          <div class="pin">${String(idx+1).padStart(2,'0')}</div>
+          <div class="thread"></div>
+        </div>
+        <div class="card">
+          ${p.done && isNewlyDone ? stampSVG() : (p.done ? stampSVGStatic() : '')}
+          <div class="card-body">
+            <p class="card-name">${escapeHTML(p.name)}</p>
+            ${p.note ? `<p class="card-note">${escapeHTML(p.note)}</p>` : ''}
+          </div>
+          <div class="card-actions">
+            <button class="check-btn" title="${p.done ? 'Mark as not visited' : 'Mark as visited'}" data-action="toggle" data-id="${p.id}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+            <button class="del-btn" title="Remove" data-action="delete" data-id="${p.id}">✕</button>
+          </div>
+        </div>
+      `;
+      routeList.appendChild(li);
+    });
+
+    lastRenderedIds = new Set(places.filter(p=>p.done).map(p => p.id + ':done'));
+  }
+
+  function stampSVGStatic(){
+    // same visual, no entrance animation (already-done items on reload)
+    return `
+      <svg class="stamp" style="animation:none;" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <g filter="url(#inkGrain)" transform="rotate(-10 32 32)">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#3E6B58" stroke-width="2.5"/>
+          <circle cx="32" cy="32" r="20" fill="none" stroke="#3E6B58" stroke-width="1" stroke-dasharray="2 3"/>
+          <path d="M23 33 L29 39 L41 25" fill="none" stroke="#3E6B58" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </svg>`;
+  }
+
+  function escapeHTML(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadPlaces(){
+    const {data,error}=await supabase.from('places').select('*').order('createdat');
+    if(error){footerNote.textContent='Failed to load'; loaded=true; render(); return;}
+    places=(data||[]).map(r=>({id:r.id,name:r.name,note:r.note||'',done:r.done,createdAt:r.createdat}));
+    loaded=true;
+    footerNote.textContent='Shared via Supabase';
+    render();
+  }
+
+  async function savePlaces(){ // sync local array to DB
+    const rows=places.map(p=>({id:p.id,name:p.name,note:p.note,done:p.done,createdat:p.createdAt}));
+    const {error}=await supabase.from('places').upsert(rows);
+    if(error){footerNote.textContent='Save failed';}
+    else footerNote.textContent='Saved';
+  }
+
+
+
+  composerForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    const name = placeInput.value.trim();
+    if(!name) return;
+    const note = noteInput.value.trim();
+    places.push({ id: uid(), name, note, done: false, createdAt: Date.now() });
+    placeInput.value = '';
+    noteInput.value = '';
+    placeInput.focus();
+    render();
+    savePlaces();
+  });
+
+  routeList.addEventListener('click', function(e){
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const place = places.find(p => p.id === id);
+    if(!place) return;
+
+    if(action === 'toggle'){
+      place.done = !place.done;
+      render();
+      savePlaces();
+    } else if(action === 'delete'){
+      places = places.filter(p => p.id !== id);
+      render();
+      savePlaces();
+    }
+  });
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', function(){
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  // Poll for updates from other people on the link, skip while the composer is focused
+  setInterval(function(){
+    const activeEl = document.activeElement;
+    const isTyping = activeEl === placeInput || activeEl === noteInput;
+    if(!isTyping && !saving) loadPlaces();
+  }, 7000);
+
+  loadPlaces();
+})();
+</script>
+</body>
+</html>
